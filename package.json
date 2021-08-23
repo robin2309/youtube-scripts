@@ -20,6 +20,7 @@
     "axios": "^0.21.1",
     "google-auth-library": "^7.5.0",
     "googleapis": "^84.0.0",
+    "moment": "^2.29.1",
     "qs": "^6.10.1"
   }
 }

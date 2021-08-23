@@ -1,6 +1,7 @@
 var fs = require('fs');
 var readline = require('readline');
 var { google } = require('googleapis');
+var moment = require('moment');
 var OAuth2 = google.auth.OAuth2;
 
 // If modifying these scopes, delete your previously saved credentials
@@ -11,7 +12,8 @@ var TOKEN_PATH = TOKEN_DIR + 'youtube-nodejs-quickstart.json';
 
 const youtubeService = google.youtube('v3');
 
-const username = 'SuperMozinor';
+const username = 'TheSailingFrenchman';
+const channelId = 'UCjbnS2PJDbVxyF0foCil6oQ';
 
 // Load client secrets from a local file.
 fs.readFile('client_secret.json', function processClientSecrets(err, content) {
@@ -108,7 +110,13 @@ function getChannel(auth) {
     {
       auth: auth,
       part: 'snippet,contentDetails,statistics',
-      forUsername: username,
+      ...(channelId
+        ? {
+            id: channelId,
+          }
+        : {
+            forUsername: username,
+          }),
     },
     function (err, response) {
       if (err) {
@@ -119,7 +127,6 @@ function getChannel(auth) {
       if (channels.length == 0) {
         console.log('No channel found.');
       } else {
-        console.log(channels[0].contentDetails.relatedPlaylists);
         getVideos(auth, channels[0].contentDetails.relatedPlaylists.uploads);
       }
     },
@@ -130,7 +137,7 @@ const getVideosPage = (auth, playlistId, videos, nextPageToken) => {
   return youtubeService.playlistItems
     .list({
       auth: auth,
-      maxResults: 500,
+      maxResults: 50,
       part: ['snippet', 'status'],
       playlistId,
       pageToken: nextPageToken,
@@ -149,14 +156,62 @@ const getVideosPage = (auth, playlistId, videos, nextPageToken) => {
     });
 };
 
+const sortByPublishedDate = (a, b) => {
+  const posA = a.snippet.position;
+  const posB = b.snippet.position;
+  return posB - posA;
+};
+
+const MAX_VIDEOS = 10;
+
+const insertPlaylistItem = (auth, playlistId, fetchedVideos, index) => {
+  return youtubeService.playlistItems
+    .insert({
+      auth,
+      requestBody: {
+        snippet: {
+          playlistId,
+          resourceId: {
+            kind: 'youtube#video',
+            videoId: fetchedVideos[index].snippet.resourceId.videoId,
+          },
+        },
+      },
+      part: 'snippet',
+    })
+    .then((response) => {
+      console.log('ADDED !');
+      const newIndex = index + 1;
+      if (Boolean(fetchedVideos[newIndex])) {
+        return insertPlaylistItem(auth, playlistId, fetchedVideos, newIndex);
+      }
+      return Promise.resolve(true);
+    });
+};
+
 function getVideos(auth, playlistId) {
   getVideosPage(auth, playlistId, []).then((fetchedVideos) => {
-    console.log('END');
-    console.log(fetchedVideos[0].snippet.resourceId.videoId);
-    youtubeService.playlists.insert({
-      auth,
-      requestBody: { snippet: { title: username } },
-      part: 'snippet',
-    });
+    console.log(fetchedVideos.length);
+    // console.log(fetchedVideos[0].snippet.resourceId.videoId);
+    youtubeService.playlists
+      .insert({
+        auth,
+        requestBody: { snippet: { title: username } },
+        part: 'snippet',
+      })
+      .then((response) => {
+        const playlistId = response.data.id;
+        const slicedVideos = fetchedVideos
+          .sort(sortByPublishedDate)
+          .slice(0, MAX_VIDEOS - 1);
+        return insertPlaylistItem(auth, playlistId, slicedVideos, 0);
+      })
+      .then((resp) => {
+        console.log('DONE');
+      })
+      .catch((err) => {
+        console.log('ERR');
+        console.log(err);
+      });
   });
 }
