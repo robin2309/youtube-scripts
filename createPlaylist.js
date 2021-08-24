@@ -162,7 +162,8 @@ const sortByPublishedDate = (a, b) => {
   return posB - posA;
 };
 
-const MAX_VIDEOS = 10;
+const START_VIDEOS_SLICE = 55;
+const END_VIDEOS_SLICE = 100;
 
 const insertPlaylistItem = (auth, playlistId, fetchedVideos, index) => {
   return youtubeService.playlistItems
@@ -192,7 +193,6 @@ const insertPlaylistItem = (auth, playlistId, fetchedVideos, index) => {
 function getVideos(auth, playlistId) {
   getVideosPage(auth, playlistId, []).then((fetchedVideos) => {
     console.log(fetchedVideos.length);
-    // console.log(fetchedVideos[0].snippet.resourceId.videoId);
     youtubeService.playlists
       .insert({
         auth,
@@ -203,7 +203,7 @@ function getVideos(auth, playlistId) {
         const playlistId = response.data.id;
         const slicedVideos = fetchedVideos
           .sort(sortByPublishedDate)
-          .slice(0, MAX_VIDEOS - 1);
+          .slice(START_VIDEOS_SLICE, END_VIDEOS_SLICE - 1);
         return insertPlaylistItem(auth, playlistId, slicedVideos, 0);
       })
       .then((resp) => {
