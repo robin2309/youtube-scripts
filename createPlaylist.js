@@ -12,8 +12,8 @@ var TOKEN_PATH = TOKEN_DIR + 'youtube-nodejs-quickstart.json';
 
 const youtubeService = google.youtube('v3');
 
-const username = 'TheSailingFrenchman';
-const channelId = 'UCjbnS2PJDbVxyF0foCil6oQ';
+const username = 'Mozinor';
+const channelId = 'UCTIiKt_Bp4gKlFPtHeB3qGw';
 
 // Load client secrets from a local file.
 fs.readFile('client_secret.json', function processClientSecrets(err, content) {
@@ -162,8 +162,8 @@ const sortByPublishedDate = (a, b) => {
   return posB - posA;
 };
 
-const START_VIDEOS_SLICE = 55;
-const END_VIDEOS_SLICE = 100;
+const START_VIDEOS_SLICE = 0;
+const END_VIDEOS_SLICE = 55;
 
 const insertPlaylistItem = (auth, playlistId, fetchedVideos, index) => {
   return youtubeService.playlistItems
